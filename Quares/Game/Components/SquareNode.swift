@@ -13,8 +13,18 @@ final class SquareNode: SKShapeNode {
         self.gridY = gridY
         super.init()
 
-        let insetRect = frame.insetBy(dx: inset, dy: inset)
-        self.path = CGPath(roundedRect: insetRect, cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil)
+        let insetSize = CGSize(
+            width: frame.width - inset * 2,
+            height: frame.height - inset * 2
+        )
+        let centeredRect = CGRect(
+            x: -insetSize.width / 2,
+            y: -insetSize.height / 2,
+            width: insetSize.width,
+            height: insetSize.height
+        )
+        self.path = CGPath(roundedRect: centeredRect, cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil)
+        self.position = CGPoint(x: frame.midX, y: frame.midY)
         self.name = "square_\(gridX)_\(gridY)"
         self.strokeColor = .clear
         self.lineWidth = 0
