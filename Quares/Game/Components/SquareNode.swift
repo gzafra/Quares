@@ -48,17 +48,18 @@ final class SquareNode: SKShapeNode {
     // MARK: - Animations
 
     func animateSuccessfulClear(newColor: SKColor, completion: (() -> Void)? = nil) {
-        let scaleDown = SKAction.scale(to: 0.1, duration: 0.12)
-        let fadeOut = SKAction.fadeAlpha(to: 0, duration: 0.12)
+        let scaleDown = SKAction.scale(to: 0.1, duration: 0.3)
+        let fadeOut = SKAction.fadeAlpha(to: 0, duration: 0.3)
         let shrinkAndFade = SKAction.group([scaleDown, fadeOut])
 
         let updateColor = SKAction.run { [weak self] in
             self?.fillColor = newColor
+            self?.xScale = 1
+            self?.yScale = 1
         }
 
-        let scaleUp = SKAction.scale(to: 1.0, duration: 0.1)
         let fadeIn = SKAction.fadeAlpha(to: 1.0, duration: 0.1)
-        let growAndAppear = SKAction.group([scaleUp, fadeIn])
+        let growAndAppear = SKAction.group([fadeIn])
 
         let sequence = SKAction.sequence([shrinkAndFade, updateColor, growAndAppear])
 
