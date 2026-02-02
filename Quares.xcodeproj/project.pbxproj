@@ -23,6 +23,7 @@
 		E014 /* ScoreBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F014 /* ScoreBoard.swift */; };
 		E015 /* GameOverScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F015 /* GameOverScreen.swift */; };
 		E016 /* GameScene+BrainDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F016 /* GameScene+BrainDelegate.swift */; };
+		E017 /* ColorMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = F017 /* ColorMode.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -52,6 +53,7 @@
 		F014 /* ScoreBoard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoreBoard.swift; sourceTree = "<group>"; };
 		F015 /* GameOverScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameOverScreen.swift; sourceTree = "<group>"; };
 		F016 /* GameScene+BrainDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GameScene+BrainDelegate.swift"; sourceTree = "<group>"; };
+		F017 /* ColorMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorMode.swift; sourceTree = "<group>"; };
 		PR01 /* Quares.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Quares.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		PR02 /* QuaresTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuaresTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -137,6 +139,7 @@
 		G007 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				F017 /* ColorMode.swift */,
 				F009 /* GameConfiguration.swift */,
 			);
 			path = Models;
@@ -269,6 +272,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E017 /* ColorMode.swift in Sources */,
 				E001 /* QuaresApp.swift in Sources */,
 				E002 /* MainMenuView.swift in Sources */,
 				E003 /* OptionsView.swift in Sources */,

@@ -16,12 +16,13 @@ struct GameConfiguration {
     var difficultyIncreasePerScore: Int = 100
     var drainSpeedIncreasePercentage: Double = 0.1
 
-    // Available colors for squares
-    static let availableColors: [Color] = [
-        .red, .blue, .green, .yellow, .purple, .orange, .pink, .cyan
-    ]
+    // Color mode for accessibility
+    var colorMode: ColorMode = {
+        let rawValue = UserDefaults.standard.string(forKey: "colorMode") ?? ColorMode.normal.rawValue
+        return ColorMode(rawValue: rawValue) ?? .normal
+    }()
 
     func colors() -> [Color] {
-        Array(Self.availableColors.prefix(numberOfColors))
+        Array(colorMode.colors.prefix(numberOfColors))
     }
 }
