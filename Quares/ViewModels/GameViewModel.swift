@@ -4,6 +4,7 @@ import SwiftUI
 
 final class GameViewModel: ObservableObject {
     @Published var shouldDismiss = false
+    @Published var shouldShowOptions = false
 
     private var scene: GameScene?
     private let brain: Brain
@@ -42,5 +43,11 @@ extension GameViewModel: GameSceneDelegate {
 
     func gameSceneDidRequestRestart(_ scene: GameScene) {
         restartGame()
+    }
+
+    func gameSceneDidRequestOptions(_ scene: GameScene) {
+        DispatchQueue.main.async {
+            self.shouldShowOptions = true
+        }
     }
 }

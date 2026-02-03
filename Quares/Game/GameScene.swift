@@ -4,6 +4,7 @@ import SwiftUI
 protocol GameSceneDelegate: AnyObject {
     func gameSceneDidRequestExit(_ scene: GameScene)
     func gameSceneDidRequestRestart(_ scene: GameScene)
+    func gameSceneDidRequestOptions(_ scene: GameScene)
 }
 
 final class GameScene: SKScene {
@@ -19,6 +20,10 @@ final class GameScene: SKScene {
     private(set) var healthBar: HealthBar?
     private(set) var scoreBoard: ScoreBoard?
     private var gameOverScreen: GameOverScreen?
+    private var pauseMenuScreen: PauseMenuScreen?
+    private var pauseButton: SKShapeNode?
+    
+    private(set) var isPausedState: Bool = false
 
     private var dragStartPosition: GridPosition?
     private var highlightedSquares: Set<GridPosition> = []
@@ -46,6 +51,7 @@ final class GameScene: SKScene {
         setupGrid()
         setupHealthBar()
         setupScoreBoard()
+        setupPauseButton()
         brain.startGame()
     }
 
@@ -112,6 +118,34 @@ final class GameScene: SKScene {
         let board = ScoreBoard(position: CGPoint(x: gridPadding, y: scoreY))
         scoreBoard = board
         addChild(board)
+    }
+
+    private func setupPauseButton() {
+        let buttonSize: CGFloat = 40
+        let button = SKShapeNode(rect: CGRect(x: 0, y: 0, width: buttonSize, height: buttonSize), cornerRadius: 8)
+        button.name = "pauseButton"
+        button.fillColor = SKColor(white: 0.3, alpha: 1.0)
+        button.strokeColor = .white
+        button.position = CGPoint(x: size.width - gridPadding - buttonSize, y: size.height - gridPadding - buttonSize)
+        
+        // Add pause icon (two vertical bars)
+        let barWidth: CGFloat = 4
+        let barHeight: CGFloat = 16
+        let barSpacing: CGFloat = 6
+        
+        let leftBar = SKShapeNode(rect: CGRect(x: -barSpacing - barWidth, y: -barHeight / 2, width: barWidth, height: barHeight), cornerRadius: 1)
+        leftBar.fillColor = .white
+        leftBar.strokeColor = .clear
+        
+        let rightBar = SKShapeNode(rect: CGRect(x: barSpacing, y: -barHeight / 2, width: barWidth, height: barHeight), cornerRadius: 1)
+        rightBar.fillColor = .white
+        rightBar.strokeColor = .clear
+        
+        button.addChild(leftBar)
+        button.addChild(rightBar)
+        
+        pauseButton = button
+        addChild(button)
     }
 
     // MARK: - Grid Updates
@@ -208,11 +242,48 @@ final class GameScene: SKScene {
         gameOverScreen = nil
     }
 
+    // MARK: - Pause Menu
+
+    func showPauseMenu() {
+        guard pauseMenuScreen == nil else { return }
+        
+        isPausedState = true
+        brain.pauseGame()
+        
+        let screen = PauseMenuScreen(size: size)
+        screen.delegate = self
+        pauseMenuScreen = screen
+        addChild(screen)
+    }
+
+    private func hidePauseMenu() {
+        pauseMenuScreen?.removeFromParent()
+        pauseMenuScreen = nil
+        isPausedState = false
+    }
+
+    func resumeGame() {
+        hidePauseMenu()
+        brain.resumeGame()
+    }
+
     // MARK: - Touch Handling
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
+
+        // Handle pause menu touches first
+        if let pauseScreen = pauseMenuScreen {
+            _ = pauseScreen.handleTouch(at: location)
+            return
+        }
+
+        // Check for pause button tap
+        if let button = pauseButton, button.contains(location) {
+            showPauseMenu()
+            return
+        }
 
         if let screen = gameOverScreen {
             _ = screen.handleTouch(at: location)
@@ -226,6 +297,7 @@ final class GameScene: SKScene {
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard !isPausedState else { return }
         guard let touch = touches.first, let startPosition = dragStartPosition else { return }
         guard gameOverScreen == nil else { return }
 
@@ -238,6 +310,7 @@ final class GameScene: SKScene {
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard !isPausedState else { return }
         guard let touch = touches.first, let startPosition = dragStartPosition else { return }
         guard gameOverScreen == nil else { return }
 
@@ -297,5 +370,28 @@ extension GameScene: GameOverScreenDelegate {
 
     func gameOverScreenDidTapExit(_ screen: GameOverScreen) {
         gameDelegate?.gameSceneDidRequestExit(self)
+    }
+}
+
+// MARK: - PauseMenuScreenDelegate
+
+extension GameScene: PauseMenuScreenDelegate {
+    func pauseMenuScreenDidTapContinue(_ screen: PauseMenuScreen) {
+        resumeGame()
+    }
+
+    func pauseMenuScreenDidTapRestart(_ screen: PauseMenuScreen) {
+        hidePauseMenu()
+        gameDelegate?.gameSceneDidRequestRestart(self)
+    }
+
+    func pauseMenuScreenDidTapMainMenu(_ screen: PauseMenuScreen) {
+        hidePauseMenu()
+        gameDelegate?.gameSceneDidRequestExit(self)
+    }
+
+    func pauseMenuScreenDidTapOptions(_ screen: PauseMenuScreen) {
+        hidePauseMenu()
+        gameDelegate?.gameSceneDidRequestOptions(self)
     }
 }
