@@ -163,7 +163,7 @@ final class Brain {
         let squaresCleared = area.count
 
         addScore(forSquaresCleared: squaresCleared)
-        regenerateHealth()
+        regenerateHealth(forSquaresCleared: squaresCleared)
         regenerateSquares(in: area)
 
         delegate?.brainDidClearSquares(self, from: start, to: end)
@@ -194,8 +194,16 @@ final class Brain {
 
     // MARK: - Health Management
 
-    func regenerateHealth() {
-        health = min(1.0, health + configuration.healthRegenerationPercentage)
+    func regenerateHealth(forSquaresCleared squaresCleared: Int) {
+        let baseRegeneration = configuration.healthRegenerationPercentage
+        let maxAdditionalRegeneration = 1.0 - baseRegeneration
+        let gridSize = configuration.gridSize
+        let maxSquares = gridSize * gridSize
+
+        let proportionalAdditional = Double(squaresCleared) / Double(maxSquares) * maxAdditionalRegeneration
+        let totalRegeneration = baseRegeneration + proportionalAdditional
+
+        health = min(1.0, health + totalRegeneration)
         delegate?.brainDidUpdateHealth(self, health: health)
     }
 
