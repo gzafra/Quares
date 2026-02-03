@@ -200,16 +200,30 @@ final class BrainTests: XCTestCase {
     func testRegenerateHealth() {
         brain.drainHealth(deltaTime: 10.0)
         let healthBefore = brain.health
-        brain.regenerateHealth()
+        brain.regenerateHealth(forSquaresCleared: 9)
 
         XCTAssertGreaterThan(brain.health, healthBefore)
         XCTAssertTrue(delegate.updateHealthCalled)
     }
 
     func testHealthRegenerationCap() {
-        brain.regenerateHealth()
+        brain.regenerateHealth(forSquaresCleared: 1)
 
         XCTAssertEqual(brain.health, 1.0)
+    }
+
+    func testHealthRegenerationProportionalToSelectionSize() {
+        brain.drainHealth(deltaTime: 100.0)
+        let healthBeforeLow = brain.health
+        brain.regenerateHealth(forSquaresCleared: 1)
+        let healthAfterSmall = brain.health
+
+        brain.drainHealth(deltaTime: 100.0)
+        brain.regenerateHealth(forSquaresCleared: 100)
+        let healthAfterFull = brain.health
+
+        XCTAssertGreaterThan(healthAfterFull, healthAfterSmall)
+        XCTAssertEqual(healthAfterFull, 1.0)
     }
 
     func testDrainHealth() {
