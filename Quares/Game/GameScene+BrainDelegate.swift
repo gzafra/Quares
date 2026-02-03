@@ -36,4 +36,8 @@ extension GameScene: BrainDelegate {
     func brainDidTriggerCombo(_ brain: Brain, comboCount: Int) {
         showComboLabel(comboCount: comboCount)
     }
+
+    func brainDidUpdateLevel(_ brain: Brain, level: Int, currentExp: Double, requiredExp: Double) {
+        levelDisplay?.update(level: level, currentExp: currentExp, requiredExp: requiredExp)
+    }
 }

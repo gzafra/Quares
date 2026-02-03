@@ -21,6 +21,12 @@ struct GameConfiguration {
     var comboBaseBonusPercentage: Double = 0.10
     var comboIncrementPercentage: Double = 0.05
 
+    // Level settings
+    var maxLevels: Int = 100
+    var baseExperienceRequired: Double = 50.0
+    var experienceIncreasePercentage: Double = 0.5
+    var healthDrainIncreasePerLevel: Double = 0.02
+
     // Color mode for accessibility
     var colorMode: ColorMode = {
         let rawValue = UserDefaults.standard.string(forKey: "colorMode") ?? ColorMode.normal.rawValue
