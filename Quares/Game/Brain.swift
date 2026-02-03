@@ -10,6 +10,7 @@ protocol BrainDelegate: AnyObject {
     func brainDidClearSelection(_ brain: Brain)
     func brainDidClearSquares(_ brain: Brain, from: GridPosition, to: GridPosition)
     func brainDidFailSelection(_ brain: Brain, from: GridPosition, to: GridPosition)
+    func brainDidTriggerCombo(_ brain: Brain, comboCount: Int)
 }
 
 struct GridPosition: Hashable {
@@ -62,6 +63,8 @@ final class Brain {
     private(set) var health: Double = 1.0
     private(set) var isGameOver: Bool = false
     private(set) var selectedPosition: GridPosition?
+    private(set) var currentCombo: Int = 0
+    private(set) var lastSuccessTime: Date?
 
     private var healthDrainTimer: Timer?
     private var lastUpdateTime: Date?
@@ -162,6 +165,7 @@ final class Brain {
         let area = GridPosition.area(from: start, to: end)
         let squaresCleared = area.count
 
+        updateCombo()
         addScore(forSquaresCleared: squaresCleared)
         regenerateHealth(forSquaresCleared: squaresCleared)
         regenerateSquares(in: area)
@@ -182,7 +186,7 @@ final class Brain {
     // MARK: - Scoring
 
     func addScore(forSquaresCleared count: Int) {
-        let points = Int(Double(count) * multiplier)
+        let points = Int(Double(count) * multiplier * comboMultiplier)
         score += points
         delegate?.brainDidUpdateScore(self, score: score)
     }
@@ -190,6 +194,38 @@ final class Brain {
     func calculateScore(forArea start: GridPosition, to end: GridPosition) -> Int {
         let area = GridPosition.area(from: start, to: end)
         return Int(Double(area.count) * multiplier)
+    }
+
+    // MARK: - Combo Management
+
+    private func updateCombo() {
+        let now = Date()
+        if let lastSuccess = lastSuccessTime {
+            let timeSinceLastSuccess = now.timeIntervalSince(lastSuccess)
+            if timeSinceLastSuccess <= configuration.comboThreshold {
+                currentCombo += 1
+            } else {
+                currentCombo = 1
+            }
+        } else {
+            currentCombo = 1
+        }
+        lastSuccessTime = now
+
+        if currentCombo > 1 {
+            delegate?.brainDidTriggerCombo(self, comboCount: currentCombo)
+        }
+    }
+
+    private func resetCombo() {
+        currentCombo = 0
+        lastSuccessTime = nil
+    }
+
+    var comboMultiplier: Double {
+        guard currentCombo > 1 else { return 1.0 }
+        let bonus = configuration.comboBaseBonusPercentage + Double(currentCombo - 2) * configuration.comboIncrementPercentage
+        return 1.0 + bonus
     }
 
     // MARK: - Health Management
@@ -201,7 +237,9 @@ final class Brain {
         let maxSquares = gridSize * gridSize
 
         let proportionalAdditional = Double(squaresCleared) / Double(maxSquares) * maxAdditionalRegeneration
-        let totalRegeneration = baseRegeneration + proportionalAdditional
+        var totalRegeneration = baseRegeneration + proportionalAdditional
+
+        totalRegeneration *= comboMultiplier
 
         health = min(1.0, health + totalRegeneration)
         delegate?.brainDidUpdateHealth(self, health: health)
@@ -232,6 +270,7 @@ final class Brain {
         health = 1.0
         isGameOver = false
         selectedPosition = nil
+        resetCombo()
         initializeGrid()
 
         delegate?.brainDidUpdateGrid(self)

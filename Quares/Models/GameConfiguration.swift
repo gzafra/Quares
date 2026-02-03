@@ -16,6 +16,11 @@ struct GameConfiguration {
     var difficultyIncreasePerScore: Int = 100
     var drainSpeedIncreasePercentage: Double = 0.1
 
+    // Combo settings
+    var comboThreshold: TimeInterval = 3.0
+    var comboBaseBonusPercentage: Double = 0.10
+    var comboIncrementPercentage: Double = 0.05
+
     // Color mode for accessibility
     var colorMode: ColorMode = {
         let rawValue = UserDefaults.standard.string(forKey: "colorMode") ?? ColorMode.normal.rawValue

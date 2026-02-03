@@ -32,4 +32,8 @@ extension GameScene: BrainDelegate {
     func brainDidFailSelection(_ brain: Brain, from: GridPosition, to: GridPosition) {
         animateFailedSelection(from: from, to: to)
     }
+
+    func brainDidTriggerCombo(_ brain: Brain, comboCount: Int) {
+        showComboLabel(comboCount: comboCount)
+    }
 }

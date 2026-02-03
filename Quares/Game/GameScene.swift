@@ -176,6 +176,24 @@ final class GameScene: SKScene {
         }
     }
 
+    func showComboLabel(comboCount: Int) {
+        let label = SKLabelNode(text: "Combo x\(comboCount)!")
+        label.fontName = "Helvetica-Bold"
+        label.fontSize = 48
+        label.fontColor = .white
+        label.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        label.zPosition = 100
+        addChild(label)
+
+        let fadeOut = SKAction.fadeOut(withDuration: 0.3)
+        let scaleUp = SKAction.scale(to: 1.5, duration: 0.3)
+        let group = SKAction.group([fadeOut, scaleUp])
+        let remove = SKAction.removeFromParent()
+        let sequence = SKAction.sequence([group, remove])
+
+        label.run(sequence)
+    }
+
     // MARK: - Game Over
 
     func showGameOver() {
