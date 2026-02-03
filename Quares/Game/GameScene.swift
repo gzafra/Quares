@@ -21,7 +21,7 @@ final class GameScene: SKScene {
     private(set) var scoreBoard: ScoreBoard?
     private var gameOverScreen: GameOverScreen?
     private var pauseMenuScreen: PauseMenuScreen?
-    private var pauseButton: SKShapeNode?
+    private var pauseButton: PauseButton?
     
     private(set) var isPausedState: Bool = false
 
@@ -122,27 +122,10 @@ final class GameScene: SKScene {
 
     private func setupPauseButton() {
         let buttonSize: CGFloat = 40
-        let button = SKShapeNode(rect: CGRect(x: 0, y: 0, width: buttonSize, height: buttonSize), cornerRadius: 8)
-        button.name = "pauseButton"
-        button.fillColor = SKColor(white: 0.3, alpha: 1.0)
-        button.strokeColor = .white
-        button.position = CGPoint(x: size.width - gridPadding - buttonSize, y: size.height - gridPadding - buttonSize)
+        let buttonPosition = CGPoint(x: size.width - gridPadding - buttonSize, y: size.height - gridPadding - buttonSize)
         
-        // Add pause icon (two vertical bars)
-        let barWidth: CGFloat = 4
-        let barHeight: CGFloat = 16
-        let barSpacing: CGFloat = 6
-        
-        let leftBar = SKShapeNode(rect: CGRect(x: -barSpacing - barWidth, y: -barHeight / 2, width: barWidth, height: barHeight), cornerRadius: 1)
-        leftBar.fillColor = .white
-        leftBar.strokeColor = .clear
-        
-        let rightBar = SKShapeNode(rect: CGRect(x: barSpacing, y: -barHeight / 2, width: barWidth, height: barHeight), cornerRadius: 1)
-        rightBar.fillColor = .white
-        rightBar.strokeColor = .clear
-        
-        button.addChild(leftBar)
-        button.addChild(rightBar)
+        let button = PauseButton(size: buttonSize, position: buttonPosition)
+        button.delegate = self
         
         pauseButton = button
         addChild(button)
@@ -279,12 +262,6 @@ final class GameScene: SKScene {
             return
         }
 
-        // Check for pause button tap
-        if let button = pauseButton, button.contains(location) {
-            showPauseMenu()
-            return
-        }
-
         if let screen = gameOverScreen {
             _ = screen.handleTouch(at: location)
             return
@@ -393,5 +370,13 @@ extension GameScene: PauseMenuScreenDelegate {
     func pauseMenuScreenDidTapOptions(_ screen: PauseMenuScreen) {
         hidePauseMenu()
         gameDelegate?.gameSceneDidRequestOptions(self)
+    }
+}
+
+// MARK: - PauseButtonDelegate
+
+extension GameScene: PauseButtonDelegate {
+    func pauseButtonDidTap(_ button: PauseButton) {
+        showPauseMenu()
     }
 }
