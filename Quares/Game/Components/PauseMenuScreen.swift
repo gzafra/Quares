@@ -106,7 +106,8 @@ final class PauseMenuScreen: SKNode {
     }
 
     func handleTouch(at location: CGPoint) -> Bool {
-        let localLocation = convert(location, from: parent!)
+        guard let parent = parent else { return false }
+        let localLocation = convert(location, from: parent)
         let nodes = self.nodes(at: localLocation)
 
         for node in nodes {

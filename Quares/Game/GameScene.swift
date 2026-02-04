@@ -368,7 +368,9 @@ extension GameScene: PauseMenuScreenDelegate {
     }
 
     func pauseMenuScreenDidTapOptions(_ screen: PauseMenuScreen) {
-        hidePauseMenu()
+        // Note: We don't hide the pause menu here because the game should remain paused
+        // while the Options sheet is presented. The pause menu stays visible behind the sheet,
+        // and the user can continue from there after dismissing Options.
         gameDelegate?.gameSceneDidRequestOptions(self)
     }
 }

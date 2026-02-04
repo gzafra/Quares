@@ -8,10 +8,8 @@ final class PauseButton: SKNode {
     weak var delegate: PauseButtonDelegate?
     
     private let button: SKShapeNode
-    private let buttonSize: CGFloat
     
     init(size: CGFloat, position: CGPoint) {
-        self.buttonSize = size
         
         button = SKShapeNode(rect: CGRect(x: 0, y: 0, width: size, height: size), cornerRadius: 8)
         button.name = "pauseButton"
@@ -53,9 +51,5 @@ final class PauseButton: SKNode {
         if button.contains(location) {
             delegate?.pauseButtonDidTap(self)
         }
-    }
-    
-    func containsPoint(_ point: CGPoint) -> Bool {
-        return button.contains(point)
     }
 }
