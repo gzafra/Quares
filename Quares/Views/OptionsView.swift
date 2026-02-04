@@ -2,6 +2,7 @@ import SwiftUI
 
 struct OptionsView: View {
     @AppStorage("colorMode") private var colorMode: String = ColorMode.normal.rawValue
+    @Environment(\.dismiss) private var dismiss
 
     private var selectedColorMode: ColorMode {
         ColorMode(rawValue: colorMode) ?? .normal
@@ -13,6 +14,17 @@ struct OptionsView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 30) {
+                HStack {
+                    Spacer()
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 28))
+                            .foregroundColor(.gray)
+                    }
+                    .padding(.trailing, 20)
+                }
+                .padding(.top, 20)
+
                 Text("Options")
                     .font(.system(size: 36, weight: .bold))
                     .foregroundColor(.white)
@@ -21,11 +33,10 @@ struct OptionsView: View {
 
                 Spacer()
             }
-            .padding(.top, 60)
-            .padding(.horizontal, 20)
         }
         .navigationTitle("Options")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.inline
+        )
     }
 
     private var colorModeSection: some View {

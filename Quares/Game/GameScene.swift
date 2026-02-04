@@ -4,6 +4,7 @@ import SwiftUI
 protocol GameSceneDelegate: AnyObject {
     func gameSceneDidRequestExit(_ scene: GameScene)
     func gameSceneDidRequestRestart(_ scene: GameScene)
+    func gameSceneDidRequestOptions(_ scene: GameScene)
 }
 
 final class GameScene: SKScene {
@@ -19,6 +20,10 @@ final class GameScene: SKScene {
     private(set) var healthBar: HealthBar?
     private(set) var scoreBoard: ScoreBoard?
     private var gameOverScreen: GameOverScreen?
+    private var pauseMenuScreen: PauseMenuScreen?
+    private var pauseButton: PauseButton?
+    
+    private(set) var isPausedState: Bool = false
 
     private var dragStartPosition: GridPosition?
     private var highlightedSquares: Set<GridPosition> = []
@@ -46,6 +51,7 @@ final class GameScene: SKScene {
         setupGrid()
         setupHealthBar()
         setupScoreBoard()
+        setupPauseButton()
         brain.startGame()
     }
 
@@ -112,6 +118,17 @@ final class GameScene: SKScene {
         let board = ScoreBoard(position: CGPoint(x: gridPadding, y: scoreY))
         scoreBoard = board
         addChild(board)
+    }
+
+    private func setupPauseButton() {
+        let buttonSize: CGFloat = 40
+        let buttonPosition = CGPoint(x: size.width - gridPadding - buttonSize, y: size.height - gridPadding - buttonSize)
+        
+        let button = PauseButton(size: buttonSize, position: buttonPosition)
+        button.delegate = self
+        
+        pauseButton = button
+        addChild(button)
     }
 
     // MARK: - Grid Updates
@@ -208,11 +225,42 @@ final class GameScene: SKScene {
         gameOverScreen = nil
     }
 
+    // MARK: - Pause Menu
+
+    func showPauseMenu() {
+        guard pauseMenuScreen == nil else { return }
+        
+        isPausedState = true
+        brain.pauseGame()
+        
+        let screen = PauseMenuScreen(size: size)
+        screen.delegate = self
+        pauseMenuScreen = screen
+        addChild(screen)
+    }
+
+    private func hidePauseMenu() {
+        pauseMenuScreen?.removeFromParent()
+        pauseMenuScreen = nil
+        isPausedState = false
+    }
+
+    func resumeGame() {
+        hidePauseMenu()
+        brain.resumeGame()
+    }
+
     // MARK: - Touch Handling
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
+
+        // Handle pause menu touches first
+        if let pauseScreen = pauseMenuScreen {
+            _ = pauseScreen.handleTouch(at: location)
+            return
+        }
 
         if let screen = gameOverScreen {
             _ = screen.handleTouch(at: location)
@@ -226,6 +274,7 @@ final class GameScene: SKScene {
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard !isPausedState else { return }
         guard let touch = touches.first, let startPosition = dragStartPosition else { return }
         guard gameOverScreen == nil else { return }
 
@@ -238,6 +287,7 @@ final class GameScene: SKScene {
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard !isPausedState else { return }
         guard let touch = touches.first, let startPosition = dragStartPosition else { return }
         guard gameOverScreen == nil else { return }
 
@@ -297,5 +347,38 @@ extension GameScene: GameOverScreenDelegate {
 
     func gameOverScreenDidTapExit(_ screen: GameOverScreen) {
         gameDelegate?.gameSceneDidRequestExit(self)
+    }
+}
+
+// MARK: - PauseMenuScreenDelegate
+
+extension GameScene: PauseMenuScreenDelegate {
+    func pauseMenuScreenDidTapContinue(_ screen: PauseMenuScreen) {
+        resumeGame()
+    }
+
+    func pauseMenuScreenDidTapRestart(_ screen: PauseMenuScreen) {
+        hidePauseMenu()
+        gameDelegate?.gameSceneDidRequestRestart(self)
+    }
+
+    func pauseMenuScreenDidTapMainMenu(_ screen: PauseMenuScreen) {
+        hidePauseMenu()
+        gameDelegate?.gameSceneDidRequestExit(self)
+    }
+
+    func pauseMenuScreenDidTapOptions(_ screen: PauseMenuScreen) {
+        // Note: We don't hide the pause menu here because the game should remain paused
+        // while the Options sheet is presented. The pause menu stays visible behind the sheet,
+        // and the user can continue from there after dismissing Options.
+        gameDelegate?.gameSceneDidRequestOptions(self)
+    }
+}
+
+// MARK: - PauseButtonDelegate
+
+extension GameScene: PauseButtonDelegate {
+    func pauseButtonDidTap(_ button: PauseButton) {
+        showPauseMenu()
     }
 }

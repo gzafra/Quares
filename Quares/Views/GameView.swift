@@ -25,6 +25,9 @@ struct GameView: View {
                 onDismiss()
             }
         }
+        .sheet(isPresented: $viewModel.shouldShowOptions) {
+            OptionsView()
+        }
     }
 }
 
