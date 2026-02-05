@@ -118,7 +118,7 @@ final class GameScene: SKScene {
     private func setupLevelDisplay() {
         let displayWidth: CGFloat = 120
         let gridTop = gridOrigin.y + (squareSize * CGFloat(brain.configuration.gridSize))
-        let displayY = gridTop + uiSpacing + 10
+        let displayY = gridTop + uiSpacing + healthBarHeight + uiSpacing
         
         let display = LevelDisplay(
             width: displayWidth,

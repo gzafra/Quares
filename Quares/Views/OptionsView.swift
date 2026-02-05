@@ -35,8 +35,7 @@ struct OptionsView: View {
             }
         }
         .navigationTitle("Options")
-        .navigationBarTitleDisplayMode(.inline
-        )
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private var colorModeSection: some View {
