@@ -52,6 +52,8 @@ final class GameScene: SKScene {
         setupHealthBar()
         setupScoreBoard()
         setupPauseButton()
+        SoundManager.shared.stopMenuMusic()
+        SoundManager.shared.startGameMusic()
         brain.startGame()
     }
 
@@ -229,10 +231,12 @@ final class GameScene: SKScene {
 
     func showPauseMenu() {
         guard pauseMenuScreen == nil else { return }
-        
+
         isPausedState = true
         brain.pauseGame()
-        
+        SoundManager.shared.stopGameMusic()
+        SoundManager.shared.startMenuMusic()
+
         let screen = PauseMenuScreen(size: size)
         screen.delegate = self
         pauseMenuScreen = screen
@@ -247,6 +251,8 @@ final class GameScene: SKScene {
 
     func resumeGame() {
         hidePauseMenu()
+        SoundManager.shared.stopMenuMusic()
+        SoundManager.shared.startGameMusic()
         brain.resumeGame()
     }
 

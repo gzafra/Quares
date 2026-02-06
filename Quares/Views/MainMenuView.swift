@@ -5,6 +5,14 @@ struct MainMenuView: View {
 
     var body: some View {
         NavigationStack(path: $viewModel.navigationPath) {
+            mainContent
+                .onAppear {
+                    SoundManager.shared.startMenuMusic()
+                }
+        }
+    }
+
+    private var mainContent: some View {
             ZStack {
                 backgroundGradient
 

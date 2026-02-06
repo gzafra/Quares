@@ -3,6 +3,7 @@ import SwiftUI
 struct OptionsView: View {
     @AppStorage("colorMode") private var colorMode: String = ColorMode.normal.rawValue
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var soundManager = SoundManager.shared
 
     private var selectedColorMode: ColorMode {
         ColorMode(rawValue: colorMode) ?? .normal
@@ -29,14 +30,46 @@ struct OptionsView: View {
                     .font(.system(size: 36, weight: .bold))
                     .foregroundColor(.white)
 
-                colorModeSection
+                ScrollView {
+                    VStack(spacing: 24) {
+                        soundSection
+                        colorModeSection
+                    }
+                    .padding(.horizontal, 20)
+                }
 
                 Spacer()
             }
         }
         .navigationTitle("Options")
-        .navigationBarTitleDisplayMode(.inline
-        )
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var soundSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Audio")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.white)
+
+            Toggle("Music", isOn: $soundManager.isMusicEnabled)
+                .toggleStyle(SwitchToggleStyle(tint: .green))
+                .foregroundColor(.white)
+
+            Toggle("Sound Effects", isOn: $soundManager.isSoundEffectsEnabled)
+                .toggleStyle(SwitchToggleStyle(tint: .green))
+                .foregroundColor(.white)
+
+            Toggle("Allow Own Music", isOn: $soundManager.allowOwnMusic)
+                .toggleStyle(SwitchToggleStyle(tint: .blue))
+                .foregroundColor(.white)
+
+            Text("When enabled, your music will play instead of game music")
+                .font(.system(size: 12))
+                .foregroundColor(.gray)
+        }
+        .padding()
+        .background(Color(white: 0.15))
+        .cornerRadius(12)
     }
 
     private var colorModeSection: some View {
