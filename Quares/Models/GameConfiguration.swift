@@ -21,13 +21,19 @@ struct GameConfiguration {
     var comboBaseBonusPercentage: Double = 0.10
     var comboIncrementPercentage: Double = 0.05
 
+    // Level settings
+    var baseExpRequired: Int = 50
+    var expIncreasePercentage: Double = 0.5
+    var maxLevel: Int = 100
+    var expPerSquare: Int = 1
+
     // Color mode for accessibility
     var colorMode: ColorMode = {
         let rawValue = UserDefaults.standard.string(forKey: "colorMode") ?? ColorMode.normal.rawValue
         return ColorMode(rawValue: rawValue) ?? .normal
     }()
 
-    func colors() -> [Color] {
+    func colors() -> [
         Array(colorMode.colors.prefix(numberOfColors))
     }
 }

@@ -13,6 +13,14 @@ extension GameScene: BrainDelegate {
         scoreBoard?.update(score: score)
     }
 
+    func brainDidUpdateLevel(_ brain: Brain, level: Int, currentExp: Int, requiredExp: Int) {
+        levelBoard?.update(level: level, currentExp: currentExp, requiredExp: requiredExp)
+    }
+
+    func brainDidLevelUp(_ brain: Brain, newLevel: Int) {
+        levelBoard?.showLevelUpAnimation()
+    }
+
     func brainDidGameOver(_ brain: Brain) {
         showGameOver()
     }
