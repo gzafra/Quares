@@ -13,7 +13,7 @@ final class GameOverScreen: SKNode {
     private let restartButton: SKShapeNode
     private let exitButton: SKShapeNode
 
-    init(size: CGSize, finalScore: Int) {
+    init(size: CGSize, result: GameModeResult) {
         // Dimmer background
         dimmer = SKShapeNode(rect: CGRect(origin: .zero, size: size))
         dimmer.fillColor = SKColor(white: 0, alpha: 0.7)
@@ -43,7 +43,7 @@ final class GameOverScreen: SKNode {
         addChild(dimmer)
         addChild(panel)
 
-        setupLabels(size: size, finalScore: finalScore)
+        setupLabels(size: size, result: result)
         setupButtons(size: size)
     }
 
@@ -51,20 +51,29 @@ final class GameOverScreen: SKNode {
         fatalError("init(coder:) has not been implemented")
     }
 
-    private func setupLabels(size: CGSize, finalScore: Int) {
+    private func setupLabels(size: CGSize, result: GameModeResult) {
         let gameOverLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
         gameOverLabel.text = "Game Over"
         gameOverLabel.fontSize = 36
         gameOverLabel.fontColor = .white
-        gameOverLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 50)
+        gameOverLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 60)
         addChild(gameOverLabel)
 
-        let finalScoreLabel = SKLabelNode(fontNamed: "Helvetica")
-        finalScoreLabel.text = "Final Score: \(finalScore)"
-        finalScoreLabel.fontSize = 24
-        finalScoreLabel.fontColor = .white
-        finalScoreLabel.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        addChild(finalScoreLabel)
+        let primaryLabel = SKLabelNode(fontNamed: "Helvetica")
+        primaryLabel.text = result.primaryDisplay
+        primaryLabel.fontSize = 24
+        primaryLabel.fontColor = .white
+        primaryLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 + 10)
+        addChild(primaryLabel)
+
+        if let secondary = result.secondaryDisplay {
+            let secondaryLabel = SKLabelNode(fontNamed: "Helvetica")
+            secondaryLabel.text = secondary
+            secondaryLabel.fontSize = 18
+            secondaryLabel.fontColor = .gray
+            secondaryLabel.position = CGPoint(x: size.width / 2, y: size.height / 2 - 20)
+            addChild(secondaryLabel)
+        }
     }
 
     private func setupButtons(size: CGSize) {

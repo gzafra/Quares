@@ -25,6 +25,11 @@ final class ScoreHandler {
         delegate?.scoreHandler(self, didUpdateScore: score)
     }
     
+    func addRawScore(_ points: Int) {
+        score += points
+        delegate?.scoreHandler(self, didUpdateScore: score)
+    }
+    
     func calculateScore(forArea start: GridPosition, to end: GridPosition) -> Int {
         let area = GridPosition.area(from: start, to: end)
         return Int(Double(area.count) * baseMultiplier)

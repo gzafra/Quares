@@ -10,9 +10,20 @@ final class GameViewModel: ObservableObject {
     private let brain: Brain
     private let configuration: GameConfiguration
 
-    init(configuration: GameConfiguration = GameConfiguration()) {
+    init(gameMode: GameMode = .classic, configuration: GameConfiguration = GameConfiguration()) {
         self.configuration = configuration
-        self.brain = Brain(configuration: configuration)
+        
+        let logic: GameModeLogic
+        switch gameMode {
+        case .training:
+            logic = TrainingModeLogic()
+        case .classic:
+            logic = ClassicModeLogic()
+        case .survival:
+            logic = SurvivalModeLogic()
+        }
+        
+        self.brain = Brain(configuration: configuration, gameModeLogic: logic)
     }
 
     func getOrCreateScene(size: CGSize) -> GameScene {
