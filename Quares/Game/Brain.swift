@@ -5,6 +5,8 @@ protocol BrainDelegate: AnyObject {
     func brainDidUpdateGrid(_ brain: Brain)
     func brainDidUpdateHealth(_ brain: Brain, health: Double)
     func brainDidUpdateScore(_ brain: Brain, score: Int)
+    func brainDidUpdateLevel(_ brain: Brain, level: Int, currentExp: Int, requiredExp: Int)
+    func brainDidLevelUp(_ brain: Brain, newLevel: Int)
     func brainDidGameOver(_ brain: Brain)
     func brainDidSelectSquares(_ brain: Brain, squares: Set<GridPosition>)
     func brainDidClearSelection(_ brain: Brain)
@@ -26,6 +28,7 @@ final class Brain {
 
     private let comboHandler: ComboHandler
     private let scoreHandler: ScoreHandler
+    private let levelHandler: LevelHandler
 
     private var healthDrainTimer: Timer?
     private var lastUpdateTime: Date?
@@ -36,9 +39,15 @@ final class Brain {
     var currentHealthDrainDuration: TimeInterval {
         let difficultyLevel = scoreHandler.score / configuration.difficultyIncreasePerScore
         let speedIncrease = Double(difficultyLevel) * configuration.drainSpeedIncreasePercentage
-        let newDuration = configuration.initialHealthDrainDuration * (1.0 - speedIncrease)
+        let levelMultiplier = levelHandler.healthDrainMultiplier
+        let newDuration = configuration.initialHealthDrainDuration * (1.0 - speedIncrease) / levelMultiplier
         return max(newDuration, configuration.minimumHealthDrainDuration)
     }
+
+    var currentLevel: Int { levelHandler.currentLevel }
+    var currentExperience: Int { levelHandler.currentExperience }
+    var experienceRequired: Int { levelHandler.experienceRequiredForNextLevel }
+    var experienceProgress: Double { levelHandler.experienceProgress }
 
     var multiplier: Double {
         configuration.baseMultiplier
@@ -55,8 +64,15 @@ final class Brain {
             comboIncrementPercentage: configuration.comboIncrementPercentage
         )
         self.scoreHandler = ScoreHandler(baseMultiplier: configuration.baseMultiplier)
+        self.levelHandler = LevelHandler(
+            baseExpRequired: configuration.baseExpRequired,
+            expIncreasePercentage: configuration.expIncreasePercentage,
+            maxLevel: configuration.maxLevel,
+            expPerSquare: configuration.expPerSquare
+        )
         self.comboHandler.delegate = self
         self.scoreHandler.delegate = self
+        self.levelHandler.delegate = self
         initializeGrid()
     }
 
@@ -139,6 +155,7 @@ final class Brain {
 
         comboHandler.updateCombo()
         scoreHandler.addScore(forSquaresCleared: squaresCleared, comboMultiplier: comboHandler.comboMultiplier)
+        levelHandler.addExperience(forSquaresCleared: squaresCleared)
         regenerateHealth(forSquaresCleared: squaresCleared)
         regenerateSquares(in: area)
 
@@ -198,6 +215,7 @@ final class Brain {
 
     func resetGame() {
         scoreHandler.resetScore()
+        levelHandler.reset()
         health = 1.0
         isGameOver = false
         selectedPosition = nil
@@ -207,6 +225,7 @@ final class Brain {
         delegate?.brainDidUpdateGrid(self)
         delegate?.brainDidUpdateScore(self, score: scoreHandler.score)
         delegate?.brainDidUpdateHealth(self, health: health)
+        delegate?.brainDidUpdateLevel(self, level: levelHandler.currentLevel, currentExp: levelHandler.currentExperience, requiredExp: levelHandler.experienceRequiredForNextLevel)
         delegate?.brainDidClearSelection(self)
     }
 
@@ -261,5 +280,21 @@ extension Brain: ComboHandlerDelegate {
 extension Brain: ScoreHandlerDelegate {
     func scoreHandler(_ handler: ScoreHandler, didUpdateScore score: Int) {
         delegate?.brainDidUpdateScore(self, score: score)
+    }
+}
+
+// MARK: - LevelHandlerDelegate
+
+extension Brain: LevelHandlerDelegate {
+    func levelHandler(_ handler: LevelHandler, didUpdateLevel level: Int) {
+        delegate?.brainDidUpdateLevel(self, level: level, currentExp: handler.currentExperience, requiredExp: handler.experienceRequiredForNextLevel)
+    }
+
+    func levelHandler(_ handler: LevelHandler, didUpdateExperience currentExp: Int, requiredExp: Int) {
+        delegate?.brainDidUpdateLevel(self, level: handler.currentLevel, currentExp: currentExp, requiredExp: requiredExp)
+    }
+
+    func levelHandlerDidLevelUp(_ handler: LevelHandler, newLevel: Int) {
+        delegate?.brainDidLevelUp(self, newLevel: newLevel)
     }
 }
