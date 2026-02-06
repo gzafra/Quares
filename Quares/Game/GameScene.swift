@@ -19,6 +19,8 @@ final class GameScene: SKScene {
 
     private(set) var healthBar: HealthBar?
     private(set) var scoreBoard: ScoreBoard?
+    private(set) var levelBoard: LevelBoard?
+    private(set) var timerBoard: TimerBoard?
     private var gameOverScreen: GameOverScreen?
     private var pauseMenuScreen: PauseMenuScreen?
     private var pauseButton: PauseButton?
@@ -49,8 +51,23 @@ final class GameScene: SKScene {
     override func didMove(to view: SKView) {
         backgroundColor = SKColor(white: 0.1, alpha: 1.0)
         setupGrid()
-        setupHealthBar()
-        setupScoreBoard()
+        
+        if brain.gameModeLogic.shouldShowHealthBar() {
+            setupHealthBar()
+        }
+        
+        if brain.gameModeLogic.shouldShowScore() {
+            setupScoreBoard()
+        }
+        
+        if brain.gameModeLogic.shouldShowLevel() {
+            setupLevelBoard()
+        }
+        
+        if brain.gameModeLogic.shouldShowTimer() {
+            setupTimerBoard()
+        }
+        
         setupPauseButton()
         brain.startGame()
     }
@@ -117,6 +134,21 @@ final class GameScene: SKScene {
         let scoreY = gridOrigin.y - uiSpacing
         let board = ScoreBoard(position: CGPoint(x: gridPadding, y: scoreY))
         scoreBoard = board
+        addChild(board)
+    }
+
+    private func setupLevelBoard() {
+        let levelX = size.width - gridPadding
+        let levelY = gridOrigin.y - uiSpacing
+        let board = LevelBoard(position: CGPoint(x: levelX, y: levelY))
+        levelBoard = board
+        addChild(board)
+    }
+
+    private func setupTimerBoard() {
+        let timerY = gridOrigin.y - uiSpacing - 10
+        let board = TimerBoard(position: CGPoint(x: size.width / 2, y: timerY))
+        timerBoard = board
         addChild(board)
     }
 
@@ -214,7 +246,8 @@ final class GameScene: SKScene {
     // MARK: - Game Over
 
     func showGameOver() {
-        let screen = GameOverScreen(size: size, finalScore: brain.score)
+        let result = brain.getGameOverResult()
+        let screen = GameOverScreen(size: size, result: result)
         screen.delegate = self
         gameOverScreen = screen
         addChild(screen)
