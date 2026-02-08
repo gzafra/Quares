@@ -289,6 +289,53 @@ final class BrainTests: XCTestCase {
         XCTAssertFalse(delegate.selectedSquaresCalled)
     }
 
+    // MARK: - Level Tests
+
+    func testInitialLevel() {
+        XCTAssertEqual(brain.currentLevel, 1)
+    }
+
+    func testLevelUpOnMatch() {
+        // Set up a match
+        brain.grid[0][0] = Square(colorIndex: 0)
+        brain.grid[0][9] = Square(colorIndex: 0)
+        brain.grid[9][0] = Square(colorIndex: 0)
+        brain.grid[9][9] = Square(colorIndex: 0)
+        
+        // 10x10 = 100 squares. Level 1 needs 50 exp. 
+        brain.attemptMatch(from: GridPosition(x: 0, y: 0), to: GridPosition(x: 9, y: 9))
+        
+        XCTAssertEqual(brain.currentLevel, 2)
+        XCTAssertTrue(delegate.updateLevelCalled)
+        XCTAssertTrue(delegate.levelUpCalled)
+    }
+
+    func testResetGameResetsLevel() {
+        // Set up a match to level up
+        brain.grid[0][0] = Square(colorIndex: 0)
+        brain.grid[0][9] = Square(colorIndex: 0)
+        brain.grid[9][0] = Square(colorIndex: 0)
+        brain.grid[9][9] = Square(colorIndex: 0)
+        brain.attemptMatch(from: GridPosition(x: 0, y: 0), to: GridPosition(x: 9, y: 9))
+        
+        brain.resetGame()
+        XCTAssertEqual(brain.currentLevel, 1)
+    }
+
+    func testHealthDrainDurationDecreasesWithLevel() {
+        let durationLevel1 = brain.currentHealthDrainDuration
+        
+        // Level up to level 2
+        brain.grid[0][0] = Square(colorIndex: 0)
+        brain.grid[0][9] = Square(colorIndex: 0)
+        brain.grid[9][0] = Square(colorIndex: 0)
+        brain.grid[9][9] = Square(colorIndex: 0)
+        brain.attemptMatch(from: GridPosition(x: 0, y: 0), to: GridPosition(x: 9, y: 9))
+        
+        let durationLevel2 = brain.currentHealthDrainDuration
+        XCTAssertLessThan(durationLevel2, durationLevel1)
+    }
+
     // MARK: - Integration Tests
 
     func testSuccessfulMatch() {
@@ -333,9 +380,14 @@ final class MockBrainDelegate: BrainDelegate {
     var clearSelectionCalled = false
     var clearSquaresCalled = false
     var failSelectionCalled = false
+    var updateLevelCalled = false
+    var updateExperienceCalled = false
+    var levelUpCalled = false
 
     var lastHealth: Double = 0
     var lastScore: Int = 0
+    var lastLevel: Int = 0
+    var lastProgress: Double = 0
     var lastSelectedSquares: Set<GridPosition> = []
 
     func brainDidUpdateGrid(_ brain: Brain) {
@@ -350,6 +402,20 @@ final class MockBrainDelegate: BrainDelegate {
     func brainDidUpdateScore(_ brain: Brain, score: Int) {
         updateScoreCalled = true
         lastScore = score
+    }
+
+    func brainDidUpdateLevel(_ brain: Brain, level: Int) {
+        updateLevelCalled = true
+        lastLevel = level
+    }
+
+    func brainDidUpdateExperience(_ brain: Brain, progress: Double) {
+        updateExperienceCalled = true
+        lastProgress = progress
+    }
+
+    func brainDidLevelUp(_ brain: Brain, from oldLevel: Int, to newLevel: Int) {
+        levelUpCalled = true
     }
 
     func brainDidGameOver(_ brain: Brain) {
