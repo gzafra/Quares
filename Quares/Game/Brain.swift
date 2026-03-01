@@ -5,6 +5,10 @@ protocol BrainDelegate: AnyObject {
     func brainDidUpdateGrid(_ brain: Brain)
     func brainDidUpdateHealth(_ brain: Brain, health: Double)
     func brainDidUpdateScore(_ brain: Brain, score: Int)
+    func brainDidUpdateLevel(_ brain: Brain, level: Int)
+    func brainDidUpdateExperience(_ brain: Brain, progress: Double)
+    func brainDidLevelUp(_ brain: Brain, from oldLevel: Int, to newLevel: Int)
+    func brainDidUpdateTimer(_ brain: Brain, time: TimeInterval)
     func brainDidGameOver(_ brain: Brain)
     func brainDidSelectSquares(_ brain: Brain, squares: Set<GridPosition>)
     func brainDidClearSelection(_ brain: Brain)
@@ -13,10 +17,18 @@ protocol BrainDelegate: AnyObject {
     func brainDidTriggerCombo(_ brain: Brain, comboCount: Int)
 }
 
+extension BrainDelegate {
+    func brainDidUpdateTimer(_ brain: Brain, time: TimeInterval) {}
+    func brainDidUpdateLevel(_ brain: Brain, level: Int) {}
+    func brainDidUpdateExperience(_ brain: Brain, progress: Double) {}
+    func brainDidLevelUp(_ brain: Brain, from oldLevel: Int, to newLevel: Int) {}
+}
+
 final class Brain {
     // MARK: - Properties
 
     weak var delegate: BrainDelegate?
+    private(set) var gameModeLogic: GameModeLogic
 
     private(set) var configuration: GameConfiguration
     private(set) var grid: [[Square]]
@@ -29,15 +41,22 @@ final class Brain {
 
     private var healthDrainTimer: Timer?
     private var lastUpdateTime: Date?
+    private var timerUpdateTimer: Timer?
 
     var score: Int { scoreHandler.score }
     var currentCombo: Int { comboHandler.currentCombo }
+    var gameMode: GameMode { gameModeLogic.mode }
+
+    var currentLevel: Int {
+        gameModeLogic.getLevelProgress()?.level ?? 1
+    }
 
     var currentHealthDrainDuration: TimeInterval {
-        let difficultyLevel = scoreHandler.score / configuration.difficultyIncreasePerScore
-        let speedIncrease = Double(difficultyLevel) * configuration.drainSpeedIncreasePercentage
-        let newDuration = configuration.initialHealthDrainDuration * (1.0 - speedIncrease)
-        return max(newDuration, configuration.minimumHealthDrainDuration)
+        gameModeLogic.calculateHealthDrainDuration(
+            baseDuration: configuration.initialHealthDrainDuration,
+            score: scoreHandler.score,
+            configuration: configuration
+        )
     }
 
     var multiplier: Double {
@@ -46,9 +65,10 @@ final class Brain {
 
     // MARK: - Initialization
 
-    init(configuration: GameConfiguration = GameConfiguration()) {
+    init(configuration: GameConfiguration = GameConfiguration(), gameModeLogic: GameModeLogic? = nil) {
         self.configuration = configuration
         self.grid = []
+        self.gameModeLogic = gameModeLogic ?? ClassicModeLogic(levelConfiguration: configuration.levelConfiguration)
         self.comboHandler = ComboHandler(
             comboThreshold: configuration.comboThreshold,
             comboBaseBonusPercentage: configuration.comboBaseBonusPercentage,
@@ -138,9 +158,21 @@ final class Brain {
         let squaresCleared = area.count
 
         comboHandler.updateCombo()
-        scoreHandler.addScore(forSquaresCleared: squaresCleared, comboMultiplier: comboHandler.comboMultiplier)
+
+        let modeScore = gameModeLogic.calculateScore(
+            squaresCleared: squaresCleared,
+            baseMultiplier: configuration.baseMultiplier,
+            comboMultiplier: comboHandler.comboMultiplier
+        )
+        scoreHandler.addRawScore(modeScore)
+
+        let previousLevel = currentLevel
+        gameModeLogic.onSuccessfulMatch(squaresCleared: squaresCleared, brain: self)
+
         regenerateHealth(forSquaresCleared: squaresCleared)
         regenerateSquares(in: area)
+
+        updateLevelIfNeeded(previousLevel: previousLevel)
 
         delegate?.brainDidClearSquares(self, from: start, to: end)
         clearSelection()
@@ -162,17 +194,14 @@ final class Brain {
     // MARK: - Health Management
 
     func regenerateHealth(forSquaresCleared squaresCleared: Int) {
-        let baseRegeneration = configuration.healthRegenerationPercentage
-        let maxAdditionalRegeneration = 1.0 - baseRegeneration
-        let gridSize = configuration.gridSize
-        let maxSquares = gridSize * gridSize
+        let regeneration = gameModeLogic.calculateHealthRegeneration(
+            baseRegeneration: configuration.healthRegenerationPercentage,
+            squaresCleared: squaresCleared,
+            comboMultiplier: comboHandler.comboMultiplier,
+            configuration: configuration
+        )
 
-        let proportionalAdditional = Double(squaresCleared) / Double(maxSquares) * maxAdditionalRegeneration
-        var totalRegeneration = baseRegeneration + proportionalAdditional
-
-        totalRegeneration *= comboHandler.comboMultiplier
-
-        health = min(1.0, health + totalRegeneration)
+        health = min(1.0, health + regeneration)
         delegate?.brainDidUpdateHealth(self, health: health)
     }
 
@@ -184,7 +213,7 @@ final class Brain {
 
         delegate?.brainDidUpdateHealth(self, health: health)
 
-        if health <= 0 {
+        if gameModeLogic.shouldGameOver(health: health) {
             triggerGameOver()
         }
     }
@@ -193,7 +222,9 @@ final class Brain {
 
     func startGame() {
         resetGame()
+        gameModeLogic.onGameStart(brain: self)
         startHealthDrain()
+        startTimerUpdateIfNeeded()
     }
 
     func resetGame() {
@@ -208,16 +239,38 @@ final class Brain {
         delegate?.brainDidUpdateScore(self, score: scoreHandler.score)
         delegate?.brainDidUpdateHealth(self, health: health)
         delegate?.brainDidClearSelection(self)
+
+        if let progress = gameModeLogic.getLevelProgress() {
+            delegate?.brainDidUpdateLevel(self, level: progress.level)
+            let expProgress = progress.experienceToNextLevel > 0
+                ? Double(progress.experience) / Double(progress.experienceToNextLevel)
+                : 0
+            delegate?.brainDidUpdateExperience(self, progress: expProgress)
+        }
     }
 
     func pauseGame() {
         stopHealthDrain()
+        stopTimerUpdate()
+        if let survival = gameModeLogic as? SurvivalModeLogic {
+            survival.pauseTimer()
+        }
     }
 
     func resumeGame() {
         guard !isGameOver else { return }
         startHealthDrain()
+        startTimerUpdateIfNeeded()
+        if let survival = gameModeLogic as? SurvivalModeLogic {
+            survival.resumeTimer()
+        }
     }
+
+    func getGameOverResult() -> GameModeResult {
+        gameModeLogic.onGameOver(brain: self)
+    }
+
+    // MARK: - Timer Management
 
     private func startHealthDrain() {
         lastUpdateTime = Date()
@@ -241,9 +294,36 @@ final class Brain {
         lastUpdateTime = now
     }
 
+    private func startTimerUpdateIfNeeded() {
+        guard gameModeLogic.shouldShowTimer() else { return }
+        timerUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            guard let self = self, let time = self.gameModeLogic.getTimerValue() else { return }
+            self.delegate?.brainDidUpdateTimer(self, time: time)
+        }
+    }
+
+    private func stopTimerUpdate() {
+        timerUpdateTimer?.invalidate()
+        timerUpdateTimer = nil
+    }
+
+    private func updateLevelIfNeeded(previousLevel: Int) {
+        guard let progress = gameModeLogic.getLevelProgress() else { return }
+        let expProgress = progress.experienceToNextLevel > 0
+            ? Double(progress.experience) / Double(progress.experienceToNextLevel)
+            : 0
+        delegate?.brainDidUpdateExperience(self, progress: expProgress)
+        delegate?.brainDidUpdateLevel(self, level: progress.level)
+
+        if progress.level > previousLevel {
+            delegate?.brainDidLevelUp(self, from: previousLevel, to: progress.level)
+        }
+    }
+
     private func triggerGameOver() {
         isGameOver = true
         stopHealthDrain()
+        stopTimerUpdate()
         delegate?.brainDidGameOver(self)
     }
 }

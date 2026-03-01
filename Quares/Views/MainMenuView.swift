@@ -10,13 +10,17 @@ struct MainMenuView: View {
 
                 VStack(spacing: 40) {
                     titleSection
+                    gameModeSelector
                     menuButtons
                 }
             }
+            .onAppear {
+                SoundManager.shared.startMenuMusic()
+            }
             .navigationDestination(for: NavigationDestination.self) { destination in
                 switch destination {
-                case .game:
-                    GameView(onDismiss: { viewModel.navigateToRoot() })
+                case .game(let mode):
+                    GameView(gameMode: mode, onDismiss: { viewModel.navigateToRoot() })
                         .navigationBarBackButtonHidden(true)
                 case .options:
                     OptionsView()
@@ -46,6 +50,22 @@ struct MainMenuView: View {
         }
     }
 
+    private var gameModeSelector: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(GameMode.allCases) { mode in
+                    GameModeCard(
+                        mode: mode,
+                        isSelected: viewModel.selectedMode == mode
+                    ) {
+                        viewModel.selectedMode = mode
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+        }
+    }
+
     private var menuButtons: some View {
         VStack(spacing: 20) {
             MenuButton(title: "Play", color: .green) {
@@ -55,6 +75,40 @@ struct MainMenuView: View {
             MenuButton(title: "Options", color: .blue) {
                 viewModel.navigateToOptions()
             }
+        }
+    }
+}
+
+struct GameModeCard: View {
+    let mode: GameMode
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Image(systemName: mode.icon)
+                    .font(.system(size: 24))
+                    .foregroundColor(isSelected ? .white : .gray)
+
+                Text(mode.displayName)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(isSelected ? .white : .gray)
+
+                Text(mode.description)
+                    .font(.system(size: 10))
+                    .foregroundColor(isSelected ? .white.opacity(0.7) : .gray.opacity(0.7))
+                    .multilineTextAlignment(.center)
+            }
+            .frame(width: 110, height: 100)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isSelected ? Color.white.opacity(0.2) : Color(white: 0.15))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isSelected ? Color.white : Color.clear, lineWidth: 2)
+            )
         }
     }
 }
