@@ -19,6 +19,7 @@ final class GameScene: SKScene {
 
     private(set) var healthBar: HealthBar?
     private(set) var scoreBoard: ScoreBoard?
+    private(set) var levelDisplay: LevelDisplay?
     private var gameOverScreen: GameOverScreen?
     private var pauseMenuScreen: PauseMenuScreen?
     private var pauseButton: PauseButton?
@@ -51,6 +52,7 @@ final class GameScene: SKScene {
         setupGrid()
         setupHealthBar()
         setupScoreBoard()
+        setupLevelDisplay()
         setupPauseButton()
         brain.startGame()
     }
@@ -118,6 +120,17 @@ final class GameScene: SKScene {
         let board = ScoreBoard(position: CGPoint(x: gridPadding, y: scoreY))
         scoreBoard = board
         addChild(board)
+    }
+
+    private func setupLevelDisplay() {
+        let levelY = gridOrigin.y - uiSpacing
+        let barWidth: CGFloat = 100
+        let display = LevelDisplay(
+            position: CGPoint(x: size.width - gridPadding, y: levelY),
+            barWidth: barWidth
+        )
+        levelDisplay = display
+        addChild(display)
     }
 
     private func setupPauseButton() {
