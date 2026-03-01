@@ -176,10 +176,15 @@ final class BrainTests: XCTestCase {
 
     // MARK: - Scoring Tests
 
-    func testAddScore() {
-        brain.addScore(forSquaresCleared: 9)
+    func testScoreIncreasesOnMatch() {
+        brain.grid[0][0] = Square(colorIndex: 0)
+        brain.grid[0][2] = Square(colorIndex: 0)
+        brain.grid[2][0] = Square(colorIndex: 0)
+        brain.grid[2][2] = Square(colorIndex: 0)
 
-        XCTAssertEqual(brain.score, 9) // 9 * 1.0 multiplier
+        brain.attemptMatch(from: GridPosition(x: 0, y: 0), to: GridPosition(x: 2, y: 2))
+
+        XCTAssertEqual(brain.score, 9) // 3x3 = 9 * 1.0 multiplier
         XCTAssertTrue(delegate.updateScoreCalled)
     }
 
@@ -247,20 +252,27 @@ final class BrainTests: XCTestCase {
         XCTAssertEqual(brain.currentHealthDrainDuration, 30.0)
     }
 
-    func testCurrentHealthDrainDuration_IncreasesWithScore() {
-        brain.addScore(forSquaresCleared: 100)
-        let duration1 = brain.currentHealthDrainDuration
+    func testCurrentHealthDrainDuration_DecreasesWithScore() {
+        let initialDuration = brain.currentHealthDrainDuration
 
-        brain.addScore(forSquaresCleared: 100)
-        let duration2 = brain.currentHealthDrainDuration
+        // Use a large match to increase score significantly
+        brain.grid[0][0] = Square(colorIndex: 0)
+        brain.grid[0][9] = Square(colorIndex: 0)
+        brain.grid[9][0] = Square(colorIndex: 0)
+        brain.grid[9][9] = Square(colorIndex: 0)
+        brain.attemptMatch(from: GridPosition(x: 0, y: 0), to: GridPosition(x: 9, y: 9))
 
-        XCTAssertLessThan(duration2, duration1)
+        XCTAssertLessThan(brain.currentHealthDrainDuration, initialDuration)
     }
 
     func testCurrentHealthDrainDuration_MinimumCap() {
-        // Add a lot of score to hit the minimum
-        for _ in 0..<100 {
-            brain.addScore(forSquaresCleared: 100)
+        // Drain health lots of times through successful matches to generate score
+        for _ in 0..<50 {
+            brain.grid[0][0] = Square(colorIndex: 0)
+            brain.grid[0][9] = Square(colorIndex: 0)
+            brain.grid[9][0] = Square(colorIndex: 0)
+            brain.grid[9][9] = Square(colorIndex: 0)
+            brain.attemptMatch(from: GridPosition(x: 0, y: 0), to: GridPosition(x: 9, y: 9))
         }
 
         XCTAssertGreaterThanOrEqual(brain.currentHealthDrainDuration, 2.0)
@@ -269,7 +281,11 @@ final class BrainTests: XCTestCase {
     // MARK: - Game State Tests
 
     func testResetGame() {
-        brain.addScore(forSquaresCleared: 100)
+        brain.grid[0][0] = Square(colorIndex: 0)
+        brain.grid[0][2] = Square(colorIndex: 0)
+        brain.grid[2][0] = Square(colorIndex: 0)
+        brain.grid[2][2] = Square(colorIndex: 0)
+        brain.attemptMatch(from: GridPosition(x: 0, y: 0), to: GridPosition(x: 2, y: 2))
         brain.drainHealth(deltaTime: 10.0)
         brain.resetGame()
 
@@ -434,5 +450,8 @@ final class MockBrainDelegate: BrainDelegate {
 
     func brainDidFailSelection(_ brain: Brain, from: GridPosition, to: GridPosition) {
         failSelectionCalled = true
+    }
+
+    func brainDidTriggerCombo(_ brain: Brain, comboCount: Int) {
     }
 }

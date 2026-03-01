@@ -25,6 +25,10 @@ extension GameScene: BrainDelegate {
         SoundManager.shared.play(.levelUp)
     }
 
+    func brainDidUpdateTimer(_ brain: Brain, time: TimeInterval) {
+        timerBoard?.update(time: time)
+    }
+
     func brainDidGameOver(_ brain: Brain) {
         SoundManager.shared.stopGameMusic()
         SoundManager.shared.startMenuMusic()

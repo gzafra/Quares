@@ -20,6 +20,7 @@ final class GameScene: SKScene {
     private(set) var healthBar: HealthBar?
     private(set) var scoreBoard: ScoreBoard?
     private(set) var levelDisplay: LevelDisplay?
+    private(set) var timerBoard: TimerBoard?
     private var gameOverScreen: GameOverScreen?
     private var pauseMenuScreen: PauseMenuScreen?
     private var pauseButton: PauseButton?
@@ -50,9 +51,21 @@ final class GameScene: SKScene {
     override func didMove(to view: SKView) {
         backgroundColor = SKColor(white: 0.1, alpha: 1.0)
         setupGrid()
-        setupHealthBar()
-        setupScoreBoard()
-        setupLevelDisplay()
+
+        let modeLogic = brain.gameModeLogic
+        if modeLogic.shouldShowHealthBar() {
+            setupHealthBar()
+        }
+        if modeLogic.shouldShowScore() {
+            setupScoreBoard()
+        }
+        if modeLogic.shouldShowLevel() {
+            setupLevelDisplay()
+        }
+        if modeLogic.shouldShowTimer() {
+            setupTimerBoard()
+        }
+
         setupPauseButton()
         SoundManager.shared.stopMenuMusic()
         SoundManager.shared.startGameMusic()
@@ -133,6 +146,13 @@ final class GameScene: SKScene {
         )
         levelDisplay = display
         addChild(display)
+    }
+
+    private func setupTimerBoard() {
+        let timerY = gridOrigin.y - uiSpacing
+        let board = TimerBoard(position: CGPoint(x: size.width / 2, y: timerY))
+        timerBoard = board
+        addChild(board)
     }
 
     private func setupPauseButton() {
@@ -229,7 +249,8 @@ final class GameScene: SKScene {
     // MARK: - Game Over
 
     func showGameOver() {
-        let screen = GameOverScreen(size: size, finalScore: brain.score)
+        let result = brain.getGameOverResult()
+        let screen = GameOverScreen(size: size, result: result)
         screen.delegate = self
         gameOverScreen = screen
         addChild(screen)
