@@ -13,6 +13,9 @@ struct MainMenuView: View {
                     menuButtons
                 }
             }
+            .onAppear {
+                SoundManager.shared.startMenuMusic()
+            }
             .navigationDestination(for: NavigationDestination.self) { destination in
                 switch destination {
                 case .game:
